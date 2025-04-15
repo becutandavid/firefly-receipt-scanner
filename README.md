@@ -12,7 +12,8 @@ https://github.com/user-attachments/assets/ec41d8dc-71e9-4aa4-b65c-869c3dd54845
 ## Features
 
 - Upload and scan receipts using Google's Gemini AI
-- Extract key information: date, amount, store name, category, and budget
+- Extract key information: date, amount, store name, category (one of your already set Firefly III categories), and budget (one of your already set Firefly III budgets)
+- Lists your asset accounts for you to easily choose a source account for the transaction
 - Review and edit extracted data before creating transactions
 - Create transactions in Firefly III with a single click
 - Automatically adds an `#automated` tag to all created transactions

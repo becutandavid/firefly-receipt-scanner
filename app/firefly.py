@@ -22,7 +22,7 @@ TIMEOUT = 30  # Increased from 30 to 60 seconds
 
 
 def get_firefly_categories():
-    url = urljoin(FIREFLY_III_URL, "/categories")
+    url = urljoin(FIREFLY_III_URL, "/api/v1/categories")
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -41,7 +41,7 @@ def get_firefly_categories():
 
 
 def get_firefly_budgets():
-    url = urljoin(FIREFLY_III_URL, "/budgets")
+    url = urljoin(FIREFLY_III_URL, "/api/v1/budgets")
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -60,7 +60,7 @@ def get_firefly_budgets():
 
 
 def get_firefly_asset_accounts():
-    url = urljoin(FIREFLY_III_URL, "/accounts")
+    url = urljoin(FIREFLY_III_URL, "/api/v1/accounts")
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -82,7 +82,7 @@ def get_firefly_asset_accounts():
 
 
 def create_firefly_transaction(receipt, source_account="Cash wallet"):
-    url = urljoin(FIREFLY_III_URL, "/transactions")
+    url = urljoin(FIREFLY_III_URL, "/api/v1/transactions")
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",

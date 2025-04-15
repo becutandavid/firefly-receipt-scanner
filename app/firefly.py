@@ -1,7 +1,6 @@
 import json
 import os
 from datetime import datetime
-from urllib.parse import urljoin
 
 import requests
 from dotenv import load_dotenv
@@ -22,7 +21,7 @@ TIMEOUT = 30  # Increased from 30 to 60 seconds
 
 
 def get_firefly_categories():
-    url = urljoin(FIREFLY_III_URL, "/categories")
+    url = f"{FIREFLY_III_URL}/categories"
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -41,7 +40,7 @@ def get_firefly_categories():
 
 
 def get_firefly_budgets():
-    url = urljoin(FIREFLY_III_URL, "/budgets")
+    url = f"{FIREFLY_III_URL}/budgets"
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -60,7 +59,7 @@ def get_firefly_budgets():
 
 
 def get_firefly_asset_accounts():
-    url = urljoin(FIREFLY_III_URL, "/accounts")
+    url = f"{FIREFLY_III_URL}/accounts"
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -82,7 +81,7 @@ def get_firefly_asset_accounts():
 
 
 def create_firefly_transaction(receipt, source_account="Cash wallet"):
-    url = urljoin(FIREFLY_III_URL, "/transactions")
+    url = f"{FIREFLY_III_URL}/transactions"
     headers = {
         "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
         "Accept": "application/json",
@@ -156,7 +155,7 @@ def create_firefly_transaction(receipt, source_account="Cash wallet"):
                 error_data = response.json()
                 if "message" in error_data:
                     error_message += f" - {error_data['message']}"
-            except Exception:
+            except:
                 error_message += f" - {response.text}"
             raise Exception(error_message)
     except requests.exceptions.Timeout:

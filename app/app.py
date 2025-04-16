@@ -12,6 +12,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .firefly import get_firefly_asset_accounts, get_firefly_categories
 from .receipt_processing import create_transaction_from_data, extract_receipt_data
@@ -32,6 +33,9 @@ def test_firefly_connection():
 
 
 app = FastAPI(title="Receipt to Firefly III")
+
+# Add ProxyHeadersMiddleware to trust X-Forwarded-Proto and X-Forwarded-Host from reverse proxy
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Test Firefly III connection before proceeding
 if not test_firefly_connection():

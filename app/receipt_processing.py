@@ -4,7 +4,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from fastapi import UploadFile
-from google import genai
+import openai
 
 from .firefly import (
     create_firefly_transaction,
@@ -17,12 +17,16 @@ from .models import ReceiptModel
 # Load environment variables
 load_dotenv()
 
-# Get API key from environment variable
-GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY")
-if not GOOGLE_AI_API_KEY:
-    raise ValueError("GOOGLE_AI_API_KEY environment variable is not set")
+# Get LLM configuration from environment variables
+LLM_BASE_URL = os.getenv("LLM_BASE_URL")
+LLM_MODEL_STRING = os.getenv("LLM_MODEL_STRING")
+LLM_API_KEY = os.getenv("LLM_API_KEY")
 
-client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+if not LLM_BASE_URL or not LLM_MODEL_STRING or not LLM_API_KEY:
+    raise ValueError("LLM_BASE_URL, LLM_MODEL_STRING, and LLM_API_KEY environment variables must be set")
+
+openai.base_url = LLM_BASE_URL
+openai.api_key = LLM_API_KEY
 
 
 async def extract_receipt_data(file: UploadFile):
@@ -75,22 +79,27 @@ async def extract_receipt_data(file: UploadFile):
 
         # Set a shorter timeout for the API call
         try:
-            print("Sending request to Gemini for analysis...")
-            # Generate receipt details using genai with a shorter timeout
-            gemini_response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=[
-                    receipt_prompt,
-                    image,
+            print("Sending request to LLM for analysis...")
+            # Generate receipt details using OpenAI-compatible LLM
+            completion = openai.chat.completions.create(
+                model=LLM_MODEL_STRING,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that extracts structured receipt data from images."},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": receipt_prompt},
+                        {"type": "image_url", "image_url": f"data:image/jpeg;base64,{image}"}
+                    ]}
                 ],
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": ReceiptModel,
-                },
+                response_format={"type": "json_object"},
+                timeout=30
             )
-            print("Received response from Gemini")
+            print("Received response from LLM")
+            llm_response = completion.choices[0].message
+            # Parse the JSON response into the ReceiptModel (assuming response is in content)
+            import json
+            parsed = ReceiptModel(**json.loads(llm_response.content))
         except Exception as e:
-            print(f"Error during Gemini analysis: {str(e)}")
+            print(f"Error during LLM analysis: {str(e)}")
             print(f"Error type: {type(e)}")
             if "timeout" in str(e).lower():
                 raise TimeoutError(
@@ -100,26 +109,26 @@ async def extract_receipt_data(file: UploadFile):
 
         # Validate and format the date
         try:
-            print(f"Validating date: {gemini_response.parsed.date}")
+            print(f"Validating date: {parsed.date}")
             # Try to parse the date to ensure it's valid
-            date_obj = datetime.strptime(gemini_response.parsed.date, "%Y-%m-%d")
+            date_obj = datetime.strptime(parsed.date, "%Y-%m-%d")
             # Format it back to the expected format
-            gemini_response.parsed.date = date_obj.strftime("%Y-%m-%d")
+            parsed.date = date_obj.strftime("%Y-%m-%d")
             print("Date validation successful")
         except ValueError:
             # If the date is invalid, use the current date
             print(
-                f"Invalid date format: {gemini_response.parsed.date}. Using current date instead."
+                f"Invalid date format: {parsed.date}. Using current date instead."
             )
-            gemini_response.parsed.date = datetime.now().strftime("%Y-%m-%d")
+            parsed.date = datetime.now().strftime("%Y-%m-%d")
 
         # Return the extracted data as a dictionary
         extracted_data = {
-            "date": gemini_response.parsed.date,
-            "amount": gemini_response.parsed.amount,
-            "store_name": gemini_response.parsed.store_name,
-            "category": gemini_response.parsed.category,
-            "budget": gemini_response.parsed.budget,
+            "date": parsed.date,
+            "amount": parsed.amount,
+            "store_name": parsed.store_name,
+            "category": parsed.category,
+            "budget": parsed.budget,
             "available_categories": categories,
             "available_budgets": budgets,
         }

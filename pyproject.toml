@@ -9,6 +9,7 @@ dependencies = [
     "fastapi[standard]>=0.115.12",
     "google-genai>=1.9.0",
     "jinja2>=3.1.6",
+    "openai>=1.74.0",
     "pillow>=11.1.0",
     "uvicorn>=0.34.0",
 ]

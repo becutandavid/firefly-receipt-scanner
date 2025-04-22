@@ -66,6 +66,7 @@ async def extract_receipt_data(file: UploadFile):
             + "), "
             "3) receipt budget (choose from: " + ", ".join(budgets) + "), "
             "4) destination account (store name) "
+            "5) description of the transaction"
             "5) date (in YYYY-MM-DD format). Today's date is "
             + datetime.now().strftime("%Y-%m-%d")
             + ". "
@@ -118,6 +119,7 @@ async def extract_receipt_data(file: UploadFile):
             "date": gemini_response.parsed.date,
             "amount": gemini_response.parsed.amount,
             "store_name": gemini_response.parsed.store_name,
+            "description": gemini_response.parsed.description,
             "category": gemini_response.parsed.category,
             "budget": gemini_response.parsed.budget,
             "available_categories": categories,
@@ -138,6 +140,7 @@ async def create_transaction_from_data(receipt_data, source_account):
         date=receipt_data["date"],
         amount=receipt_data["amount"],
         store_name=receipt_data["store_name"],
+        description=receipt_data["description"],
         category=receipt_data["category"],
         budget=receipt_data["budget"],
     )

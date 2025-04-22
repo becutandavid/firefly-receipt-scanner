@@ -109,7 +109,7 @@ def create_firefly_transaction(receipt, source_account="Cash wallet"):
                 "type": "withdrawal",
                 "date": formatted_date,
                 "amount": str(receipt.amount),
-                "description": f"Purchase at {receipt.store_name}",
+                "description": receipt.description,
                 "destination_name": receipt.store_name,
                 "source_name": source_account,
                 "category_name": receipt.category,

@@ -1,33 +1,20 @@
 import json
-import os
 from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Firefly III configuration
-FIREFLY_III_URL = os.getenv("FIREFLY_III_URL", "").rstrip("/")
-FIREFLY_III_TOKEN = os.getenv("FIREFLY_III_TOKEN")
-API_BASE_PATH = "/api/v1/"
-# Combine base URL with API path once
-API_URL = urljoin(FIREFLY_III_URL, API_BASE_PATH)
-
-# Validate required environment variables
-if not FIREFLY_III_TOKEN:
-    raise ValueError("FIREFLY_III_TOKEN environment variable is not set")
+from .config import get_settings
 
 # Increase timeout for all requests
-TIMEOUT = 30  # Increased from 30 to 60 seconds
+TIMEOUT = 30
 
 
 def get_firefly_categories():
-    url = urljoin(API_URL, "categories")
+    settings = get_settings()
+    url = urljoin(settings.firefly_api_url, "categories")
     headers = {
-        "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
+        "Authorization": f"Bearer {settings.firefly_iii_token}",
         "Accept": "application/json",
     }
     try:
@@ -44,9 +31,10 @@ def get_firefly_categories():
 
 
 def get_firefly_budgets():
-    url = urljoin(API_URL, "budgets")
+    settings = get_settings()
+    url = urljoin(settings.firefly_api_url, "budgets")
     headers = {
-        "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
+        "Authorization": f"Bearer {settings.firefly_iii_token}",
         "Accept": "application/json",
     }
     try:
@@ -63,9 +51,10 @@ def get_firefly_budgets():
 
 
 def get_firefly_asset_accounts():
-    url = urljoin(API_URL, "accounts")
+    settings = get_settings()
+    url = urljoin(settings.firefly_api_url, "accounts")
     headers = {
-        "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
+        "Authorization": f"Bearer {settings.firefly_iii_token}",
         "Accept": "application/json",
     }
     params = {
@@ -85,9 +74,10 @@ def get_firefly_asset_accounts():
 
 
 def create_firefly_transaction(receipt, source_account="Cash wallet"):
-    url = urljoin(API_URL, "transactions")
+    settings = get_settings()
+    url = urljoin(settings.firefly_api_url, "transactions")
     headers = {
-        "Authorization": f"Bearer {FIREFLY_III_TOKEN}",
+        "Authorization": f"Bearer {settings.firefly_iii_token}",
         "Accept": "application/json",
         "Content-Type": "application/json",
     }

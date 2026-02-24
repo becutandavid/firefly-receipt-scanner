@@ -1,11 +1,11 @@
-import os
 import time
 from datetime import datetime
+from functools import lru_cache
 
-from dotenv import load_dotenv
 from fastapi import UploadFile
 from google import genai
 
+from .config import get_settings
 from .firefly import (
     create_firefly_transaction,
     get_firefly_budgets,
@@ -14,19 +14,11 @@ from .firefly import (
 from .image_utils import process_image
 from .models import ReceiptModel
 
-# Load environment variables
-load_dotenv()
 
-# Get API key from environment variable
-GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY")
-if not GOOGLE_AI_API_KEY:
-    raise ValueError("GOOGLE_AI_API_KEY environment variable is not set")
-
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-if not GEMINI_MODEL:
-    raise ValueError("GEMINI_MODEL environment variable is not set")
-
-client = genai.Client(api_key=GOOGLE_AI_API_KEY)
+@lru_cache
+def get_gemini_client() -> genai.Client:
+    settings = get_settings()
+    return genai.Client(api_key=settings.google_ai_api_key)
 
 
 async def extract_receipt_data(file: UploadFile):
@@ -82,8 +74,10 @@ async def extract_receipt_data(file: UploadFile):
         try:
             print("Sending request to Gemini for analysis...")
             # Generate receipt details using genai with a shorter timeout
+            settings = get_settings()
+            client = get_gemini_client()
             gemini_response = client.models.generate_content(
-                model=GEMINI_MODEL,
+                model=settings.gemini_model,
                 contents=[
                     receipt_prompt,
                     image,

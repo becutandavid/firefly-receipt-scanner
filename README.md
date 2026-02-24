@@ -45,6 +45,7 @@ https://github.com/user-attachments/assets/ec41d8dc-71e9-4aa4-b65c-869c3dd54845
 
    # Google AI API Configuration
    GOOGLE_AI_API_KEY=your-google-ai-api-key
+   GEMINI_MODEL=gemini-2.5-flash
    ```
    
 ### Requesting Firefly III Token
@@ -55,6 +56,10 @@ https://github.com/user-attachments/assets/ec41d8dc-71e9-4aa4-b65c-869c3dd54845
    To use Google's Gemini AI, you'll need an API key. Visit the following URL to request one: [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 
    You will be asked to enter a credit card for verification purposes, but personal usage will most likely fall within the free tier.
+
+### Gemini Model
+
+   The `GEMINI_MODEL` environment variable controls which Gemini model is used for receipt scanning. The recommended default is `gemini-2.5-flash`, which offers a good balance of speed and accuracy. You can change this to any supported Gemini model (e.g. `gemini-2.5-pro` for higher accuracy). See the full list of available models at [Google AI models](https://ai.google.dev/gemini-api/docs/models).
 
 ## Deployment
 ### Security and Deployment Considerations
@@ -93,6 +98,25 @@ If you're using a phone, consider adding a bookmark of the app to your home scre
 ![iPhone Usage](docs/images/bookmark.jpg)
 
 
+
+## Updating
+
+To update to the latest version:
+
+1. Pull the latest changes:
+   ```
+   cd firefly-receipt-scanner
+   git pull
+   ```
+
+2. Check `.env.example` for any new environment variables and add them to your `.env` file if needed.
+
+3. Rebuild and restart the containers:
+   ```
+   docker-compose up -d --build
+   ```
+
+Your `.env` file will not be affected by the update.
 
 ## Troubleshooting
 

@@ -22,6 +22,10 @@ GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY")
 if not GOOGLE_AI_API_KEY:
     raise ValueError("GOOGLE_AI_API_KEY environment variable is not set")
 
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+if not GEMINI_MODEL:
+    raise ValueError("GEMINI_MODEL environment variable is not set")
+
 client = genai.Client(api_key=GOOGLE_AI_API_KEY)
 
 
@@ -79,7 +83,7 @@ async def extract_receipt_data(file: UploadFile):
             print("Sending request to Gemini for analysis...")
             # Generate receipt details using genai with a shorter timeout
             gemini_response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model=GEMINI_MODEL,
                 contents=[
                     receipt_prompt,
                     image,

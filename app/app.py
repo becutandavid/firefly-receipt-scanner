@@ -1,3 +1,4 @@
+import base64
 import os
 import sys
 
@@ -107,8 +108,18 @@ async def create_transaction(
     category: str = Form(...),
     budget: str = Form(...),
     source_account: str = Form(...),
+    attach_receipt: str = Form(""),
+    image_base64: str = Form(""),
 ):
     try:
+        # Decode image bytes if attachment is requested
+        image_bytes = None
+        if attach_receipt and image_base64:
+            try:
+                image_bytes = base64.b64decode(image_base64)
+            except Exception as e:
+                print(f"Warning: Failed to decode image for attachment: {e}")
+
         # Create the transaction
         result = await create_transaction_from_data(
             {
@@ -121,6 +132,8 @@ async def create_transaction(
                 "source_account": source_account,
             },
             source_account,
+            image_bytes=image_bytes,
+            filename=f"receipt_{store_name}_{date}.jpg",
         )
 
         if result and "Failed to create transaction" in result:

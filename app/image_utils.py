@@ -14,7 +14,7 @@ async def process_image(file: UploadFile, max_size=(768, 768)):
         quality: JPEG quality (1-100) for compression
 
     Returns:
-        A tuple containing (base64_encoded_image, original_filename)
+        A tuple containing (PIL.Image, original_file_bytes)
     """
     # Read the uploaded file
     contents = await file.read()
@@ -29,4 +29,4 @@ async def process_image(file: UploadFile, max_size=(768, 768)):
     # Resize the image while maintaining aspect ratio
     img.thumbnail(max_size, Image.LANCZOS)
 
-    return img
+    return img, contents

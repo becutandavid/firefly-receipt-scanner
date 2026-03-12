@@ -46,7 +46,16 @@
     </div>
     
     <input type="hidden" name="source_account" value="{{ extracted_data.source_account }}">
-    
+    <input type="hidden" name="image_base64" value="{{ extracted_data.image_base64 }}">
+
+    <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+            <input type="checkbox" id="attach_receipt_checkbox" checked>
+            <span>Attach receipt to transaction</span>
+        </label>
+        <input type="hidden" name="attach_receipt" id="attach_receipt_value" value="on">
+    </div>
+
     <div class="form-group">
         <button type="submit" id="submit-btn" class="btn">Create Transaction</button>
         <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">Cancel</button>
@@ -65,5 +74,9 @@
         document.getElementById('loading').classList.add('active');
         document.getElementById('submit-btn').disabled = true;
     }
+
+    document.getElementById('attach_receipt_checkbox').addEventListener('change', function() {
+        document.getElementById('attach_receipt_value').value = this.checked ? 'on' : '';
+    });
 </script>
 {% endblock %} 

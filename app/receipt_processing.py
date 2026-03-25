@@ -3,7 +3,7 @@ from datetime import datetime
 from functools import lru_cache
 
 from fastapi import UploadFile
-from google import genai
+import openai
 
 from .config import get_settings
 from .firefly import (
@@ -13,13 +13,17 @@ from .firefly import (
 )
 from .image_utils import process_image
 from .models import ReceiptModel
-
+from .prompt_utils import PromptComponents, PromptConstructor
 
 @lru_cache
-def get_gemini_client() -> genai.Client:
+def get_llm_client() -> openai.Client:
     settings = get_settings()
-    return genai.Client(api_key=settings.google_ai_api_key)
+    if not settings.llm_base_url or not settings.llm_model_string or not settings.llm_api_key:
+        raise ValueError("LLM_BASE_URL, LLM_MODEL_STRING, and LLM_API_KEY environment variables must be set")
 
+    return openai.Client(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+
+prompt_factory = PromptConstructor()
 
 async def extract_receipt_data(file: UploadFile):
     """Extract data from the receipt image without creating a transaction."""
@@ -55,41 +59,35 @@ async def extract_receipt_data(file: UploadFile):
             print("Using default budgets due to Firefly III connection issues")
 
         # Construct the prompt.
-        receipt_prompt = (
-            "Please analyze the attached receipt image and extract the following details: "
-            "1) receipt amount, 2) receipt category (choose from: "
-            + ", ".join(categories)
-            + "), "
-            "3) receipt budget (choose from: " + ", ".join(budgets) + "), "
-            "4) destination account (store name) "
-            "5) description of the transaction"
-            "5) date (in YYYY-MM-DD format). Today's date is "
-            + datetime.now().strftime("%Y-%m-%d")
-            + ". "
-            "Most receipts are from the past few days, so use today's date as a reference point when interpreting dates. "
-            "If the date is not on the receipt, use today's date as the default."
-        )
+        prompt_components = PromptComponents(catagories=categories, budgets=budgets, schema=str(ReceiptModel.model_json_schema()))
+
+        system_prompt = prompt_factory.get_system_prompt(prompt_components)
+        receipt_prompt = prompt_factory.get_user_prompt(prompt_components)
 
         # Set a shorter timeout for the API call
         try:
-            print("Sending request to Gemini for analysis...")
-            # Generate receipt details using genai with a shorter timeout
+            print("Sending request to LLM for analysis...")
+            # Generate receipt details using OpenAI-compatible LLM
             settings = get_settings()
-            client = get_gemini_client()
-            gemini_response = client.models.generate_content(
-                model=settings.gemini_model,
-                contents=[
-                    receipt_prompt,
-                    image,
+            client = get_llm_client()
+            completion = client.chat.completions.create(
+                model=settings.llm_model_string,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": receipt_prompt},
+                        {"type": "image_url", "image_url": f"data:image/jpeg;base64,{image}"}
+                    ]}
                 ],
-                config={
-                    "response_mime_type": "application/json",
-                    "response_schema": ReceiptModel,
-                },
+                response_format=ReceiptModel.model_json_schema(),
+                timeout=settings.llm_api_timeout
             )
-            print("Received response from Gemini")
+            print("Received response from LLM")
+            llm_response = completion.choices[0].message
+            print(llm_response.content)
+            parsed = ReceiptModel.model_validate_json(llm_response.content)
         except Exception as e:
-            print(f"Error during Gemini analysis: {str(e)}")
+            print(f"Error during LLM analysis: {str(e)}")
             print(f"Error type: {type(e)}")
             if "timeout" in str(e).lower():
                 raise TimeoutError(
@@ -99,27 +97,27 @@ async def extract_receipt_data(file: UploadFile):
 
         # Validate and format the date
         try:
-            print(f"Validating date: {gemini_response.parsed.date}")
+            print(f"Validating date: {parsed.date}")
             # Try to parse the date to ensure it's valid
-            date_obj = datetime.strptime(gemini_response.parsed.date, "%Y-%m-%d")
+            date_obj = datetime.strptime(parsed.date, "%Y-%m-%d")
             # Format it back to the expected format
-            gemini_response.parsed.date = date_obj.strftime("%Y-%m-%d")
+            parsed.date = date_obj.strftime("%Y-%m-%d")
             print("Date validation successful")
         except ValueError:
             # If the date is invalid, use the current date
             print(
-                f"Invalid date format: {gemini_response.parsed.date}. Using current date instead."
+                f"Invalid date format: {parsed.date}. Using current date instead."
             )
-            gemini_response.parsed.date = datetime.now().strftime("%Y-%m-%d")
+            parsed.date = datetime.now().strftime("%Y-%m-%d")
 
         # Return the extracted data as a dictionary
         extracted_data = {
-            "date": gemini_response.parsed.date,
-            "amount": gemini_response.parsed.amount,
-            "store_name": gemini_response.parsed.store_name,
-            "description": gemini_response.parsed.description,
-            "category": gemini_response.parsed.category,
-            "budget": gemini_response.parsed.budget,
+            "date": parsed.date,
+            "amount": parsed.amount,
+            "store_name": parsed.destination_account,
+            "description": parsed.description,
+            "category": parsed.category,
+            "budget": parsed.budget,
             "available_categories": categories,
             "available_budgets": budgets,
         }
@@ -137,7 +135,7 @@ async def create_transaction_from_data(receipt_data, source_account):
     receipt = ReceiptModel(
         date=receipt_data["date"],
         amount=receipt_data["amount"],
-        store_name=receipt_data["store_name"],
+        destination_account=receipt_data["store_name"],
         description=receipt_data["description"],
         category=receipt_data["category"],
         budget=receipt_data["budget"],
@@ -157,7 +155,7 @@ async def create_transaction_from_data(receipt_data, source_account):
                 print("Transaction created successfully:")
                 print(f"- Date: {receipt.date}")
                 print(f"- Amount: {receipt.amount}")
-                print(f"- Store: {receipt.store_name}")
+                print(f"- Store: {receipt.destination_account}")
                 print(f"- Category: {receipt.category}")
                 print(f"- Budget: {receipt.budget}")
                 print(f"- Source Account: {source_account}")

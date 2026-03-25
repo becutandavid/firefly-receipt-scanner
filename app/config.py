@@ -7,8 +7,10 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     firefly_iii_url: str
     firefly_iii_token: str
-    google_ai_api_key: str
-    gemini_model: str = "gemini-2.5-flash"
+    llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    llm_api_key: str = ""
+    llm_model_string: str = "gemini-2.5-flash"
+    llm_api_timeout: int = 30
 
     @computed_field
     @property

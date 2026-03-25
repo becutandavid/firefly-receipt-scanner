@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class ReceiptModel(BaseModel):
     date: str
     amount: float
-    store_name: str
+    destination_account: str
     description: str
     category: str
     budget: str

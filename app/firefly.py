@@ -3,7 +3,7 @@ from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
-
+from .models import ReceiptModel
 from .config import get_settings
 
 # Increase timeout for all requests
@@ -73,7 +73,7 @@ def get_firefly_asset_accounts():
         return []
 
 
-def create_firefly_transaction(receipt, source_account="Cash wallet"):
+def create_firefly_transaction(receipt: ReceiptModel, source_account="Cash wallet"):
     settings = get_settings()
     url = urljoin(settings.firefly_api_url, "transactions")
     headers = {
@@ -100,7 +100,7 @@ def create_firefly_transaction(receipt, source_account="Cash wallet"):
                 "date": formatted_date,
                 "amount": str(receipt.amount),
                 "description": receipt.description,
-                "destination_name": receipt.store_name,
+                "destination_name": receipt.destination_account,
                 "source_name": source_account,
                 "category_name": receipt.category,
                 "budget_name": receipt.budget,

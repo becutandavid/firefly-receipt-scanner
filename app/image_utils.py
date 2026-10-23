@@ -14,7 +14,7 @@ async def process_image(file: UploadFile, max_size=(768, 768)):
         quality: JPEG quality (1-100) for compression
 
     Returns:
-        A tuple containing (PIL.Image, original_file_bytes)
+        A tuple containing (PIL.Image, resized_jpeg_bytes)
     """
     # Read the uploaded file
     contents = await file.read()
@@ -29,4 +29,9 @@ async def process_image(file: UploadFile, max_size=(768, 768)):
     # Resize the image while maintaining aspect ratio
     img.thumbnail(max_size, Image.LANCZOS)
 
-    return img, contents
+    # Re-encode the resized image so callers get a small JPEG payload
+    # instead of the original, potentially multi-MB upload
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=85)
+
+    return img, buffer.getvalue()

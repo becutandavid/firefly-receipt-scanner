@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 import sys
 
 from fastapi import (
@@ -17,6 +18,12 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .firefly import get_firefly_asset_accounts, get_firefly_categories
 from .receipt_processing import create_transaction_from_data, extract_receipt_data
+
+
+def sanitize_filename(name: str) -> str:
+    """Make a string safe to use as an attachment filename."""
+    name = re.sub(r"[^A-Za-z0-9_-]+", "_", name).strip("_")
+    return name[:50] or "receipt"
 
 
 def test_firefly_connection():
@@ -133,7 +140,7 @@ async def create_transaction(
             },
             source_account,
             image_bytes=image_bytes,
-            filename=f"receipt_{store_name}_{date}.jpg",
+            filename=f"receipt_{sanitize_filename(store_name)}_{sanitize_filename(date)}.jpg",
         )
 
         if result and "Failed to create transaction" in result:

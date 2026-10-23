@@ -81,6 +81,32 @@ input:focus, select:focus {
     background: #7f8c8d;
 }
 
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
+.checkbox-label span {
+    font-size: 16px;
+}
+
 .error {
     background: #ffebee;
     color: #c62828;

@@ -68,23 +68,29 @@ This application does not include built-in authentication. It is recommended to 
 
 ### Using Docker Compose (Recommended)
 
-1. Build and start the application:
+`docker-compose.yml` pulls a published image from [GHCR](https://github.com/becutandavid/firefly-receipt-scanner/pkgs/container/firefly-receipt-scanner) rather than building locally, so starting (and later updating) the app is just a pull away.
+
+1. Start the application:
    ```
    docker-compose up -d
    ```
 
 2. Access the application at http://localhost:8000
 
+By default this tracks the `latest` tag. To pin to a specific release instead (recommended for anything beyond casual/local use), edit the `image:` line in `docker-compose.yml` to a specific version, e.g. `ghcr.io/becutandavid/firefly-receipt-scanner:v0.1.0`. See the [Releases page](https://github.com/becutandavid/firefly-receipt-scanner/releases) for available versions and what changed in each.
+
+If you'd rather build the image yourself from source (e.g. for local development), comment out the `image:` line in `docker-compose.yml` and uncomment `build: .`.
+
 ### Manual Deployment
 
-1. Install the required dependencies:
+1. Install the required dependencies with [uv](https://docs.astral.sh/uv/):
    ```
-   pip install -r requirements.txt
+   uv sync --frozen
    ```
 
 2. Run the application:
    ```
-   uvicorn app.app:app --host 0.0.0.0 --port 8000
+   uv run uvicorn app.app:app --host 0.0.0.0 --port 8000
    ```
 
 ## Usage
@@ -101,22 +107,19 @@ If you're using a phone, consider adding a bookmark of the app to your home scre
 
 ## Updating
 
-To update to the latest version:
+Since `docker-compose.yml` pulls a published image, updating no longer requires rebuilding from source:
 
-1. Pull the latest changes:
-   ```
-   cd firefly-receipt-scanner
-   git pull
-   ```
+1. Check the [Releases page](https://github.com/becutandavid/firefly-receipt-scanner/releases) for what changed, and whether any new environment variables were added to `.env.example` that you should add to your own `.env`.
 
-2. Check `.env.example` for any new environment variables and add them to your `.env` file if needed.
-
-3. Rebuild and restart the containers:
+2. Pull the new image and restart the container:
    ```
-   docker-compose up -d --build
+   docker-compose pull
+   docker-compose up -d
    ```
 
-Your `.env` file will not be affected by the update.
+Your `.env` file will not be affected by the update. If you're pinned to a specific version tag (see above), bump that tag in `docker-compose.yml` before pulling.
+
+If you're running from a locally built image (`build: .`), the old flow still applies: `git pull`, then `docker-compose up -d --build`.
 
 ## Troubleshooting
 

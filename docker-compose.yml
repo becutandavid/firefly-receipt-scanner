@@ -1,6 +1,9 @@
 services:
   receipt-scanner:
-    build: .
+    image: ghcr.io/becutandavid/firefly-receipt-scanner:latest
+    # To build from source instead of pulling a published image (e.g. for
+    # local development), comment out the `image` line above and uncomment:
+    # build: .
     ports:
       - "8000:8000"
     env_file:
